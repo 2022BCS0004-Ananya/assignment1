@@ -9,12 +9,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
 
-      - run: pip install -r requirements.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifacts
+          path: model/
 
-      - run: pytest
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
 
-      - run: docker build -t churn-service .
+      - name: Run tests
+        run: |
+          PYTHONPATH=. pytest
+
+      - name: Build Docker image
+        run: |
+          docker build -t churn-service .
