@@ -3,7 +3,7 @@ from app.models import Customer
 from app.rules import calculate_risk
 from app.data_loader import load_data
 from app.logger import get_logger
-
+from scripts.feature_extractor import FeatureExtractor  # needed for joblib to load pipeline
 import joblib
 import os
 import time
@@ -30,12 +30,15 @@ def extract_features(customer_dict: dict) -> dict:
     tickets = customer_dict.get("tickets", [])
     now = datetime.now()
 
+    def parse_date(date_str):
+        try:
+            return datetime.fromisoformat(date_str)
+        except:
+            return now - timedelta(days=999)
+
     def count_in_days(days):
         cutoff = now - timedelta(days=days)
-        return sum(
-            1 for t in tickets
-            if datetime.fromisoformat(t["date"]) > cutoff
-        )
+        return sum(1 for t in tickets if parse_date(t["date"]) > cutoff)
 
     freq_7d  = count_in_days(7)
     freq_30d = count_in_days(30)
@@ -43,7 +46,7 @@ def extract_features(customer_dict: dict) -> dict:
     complaint_count = sum(1 for t in tickets if t["type"] == "complaint")
 
     if len(tickets) >= 2:
-        dates = sorted([datetime.fromisoformat(t["date"]) for t in tickets])
+        dates = sorted([parse_date(t["date"]) for t in tickets])
         gaps  = [(dates[i+1] - dates[i]).days for i in range(len(dates)-1)]
         avg_gap = float(np.mean(gaps))
     else:
@@ -55,12 +58,12 @@ def extract_features(customer_dict: dict) -> dict:
     )
 
     return {
-        "freq_7d":          freq_7d,
-        "freq_30d":         freq_30d,
-        "freq_90d":         freq_90d,
-        "complaint_count":  complaint_count,
-        "avg_gap":          round(avg_gap, 2),
-        "charge_diff":      round(charge_diff, 2)
+        "freq_7d":         freq_7d,
+        "freq_30d":        freq_30d,
+        "freq_90d":        freq_90d,
+        "complaint_count": complaint_count,
+        "avg_gap":         round(avg_gap, 2),
+        "charge_diff":     round(charge_diff, 2)
     }
 
 

@@ -3,10 +3,10 @@ import joblib
 import numpy as np
 import os
 import sys
-
+import sys, os
 # Make sure app/ is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+from scripts.feature_extractor import FeatureExtractor
 import mlflow
 import mlflow.sklearn
 from sklearn.pipeline import Pipeline
@@ -18,50 +18,6 @@ from sklearn.metrics import (
     recall_score, f1_score, roc_auc_score
 )
 from datetime import datetime, timedelta
-
-
-class FeatureExtractor(BaseEstimator, TransformerMixin):
-    """Extracts numerical features from raw customer dicts"""
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        rows = []
-        now = datetime.now()
-
-        for customer in X:
-            tickets = customer.get("tickets", [])
-
-            def count_in_days(days):
-                cutoff = now - timedelta(days=days)
-                return sum(
-                    1 for t in tickets
-                    if datetime.fromisoformat(t["date"]) > cutoff
-                )
-
-            freq_7d  = count_in_days(7)
-            freq_30d = count_in_days(30)
-            freq_90d = count_in_days(90)
-            complaint_count = sum(1 for t in tickets if t["type"] == "complaint")
-
-            if len(tickets) >= 2:
-                dates = sorted([datetime.fromisoformat(t["date"]) for t in tickets])
-                gaps = [(dates[i+1] - dates[i]).days for i in range(len(dates)-1)]
-                avg_gap = float(np.mean(gaps))
-            else:
-                avg_gap = 0.0
-
-            charge_diff = float(
-                customer.get("monthly_charges", 0) -
-                customer.get("previous_month_charges", 0)
-            )
-
-            rows.append([freq_7d, freq_30d, freq_90d,
-                         complaint_count, avg_gap, charge_diff])
-
-        return np.array(rows)
-
 
 def assign_label(customer):
     """Rule-based label for training (LOW=0, MEDIUM=1, HIGH=2)"""
