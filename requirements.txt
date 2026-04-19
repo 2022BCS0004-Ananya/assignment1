@@ -1,4 +1,12 @@
 fastapi
 uvicorn
+scikit-learn
 pandas
+numpy
+joblib
+pydantic
+mlflow
+dvc
+psutil
 pytest
+httpx
