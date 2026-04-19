@@ -7,11 +7,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Create necessary directories
 RUN mkdir -p model data/processed data/splits
 
-# Preprocess data and train model at build time
-RUN python scripts/preprocess.py && python scripts/train_model.py
+# Remove old mlflow db to avoid schema conflicts, then train
+RUN rm -f mlflow.db mlflow_docker.db && \
+    python scripts/preprocess.py && \
+    python scripts/train_model.py
 
 EXPOSE 8000
 

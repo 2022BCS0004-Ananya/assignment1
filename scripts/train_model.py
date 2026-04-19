@@ -108,6 +108,7 @@ def train():
     n_estimators = 100
     max_depth    = None
 
+    mlflow.set_tracking_uri("sqlite:///mlflow_docker.db")  # fresh DB inside container
     mlflow.set_experiment("churn-prediction")
 
     with mlflow.start_run():
